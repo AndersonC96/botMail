@@ -32,7 +32,7 @@ O projeto é composto pelos seguintes arquivos:
 * Altere `'seu_dominio.com'` para o domínio que deseja monitorar.
 * Personalize as mensagens e a frequência de envio de e-mails conforme sua necessidade.
 
- - Exemplo de config.php:
+**Exemplo de config.php**:
 
 ```bash
 <?php
