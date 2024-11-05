@@ -97,11 +97,11 @@ monitoramento-zoho/
 
 **Funções Principais**
 
-**`obterUsuarios($apiKey, $dominio)`**: Obtém a lista de usuários do domínio usando a API do Zoho.
-**`verificarEspaco($apiKey, $email)`**: Verifica o espaço de armazenamento disponível para um usuário específico.
-**`enviarAlerta($apiKey, $email, $assunto, $mensagem, $nomeUsuario)`**: Envia um e-mail de alerta personalizado para o usuário.
-**`podeEnviarEmail($email, $limite, $frequencia)`**: Verifica se já passou tempo suficiente desde o último envio de e-mail para respeitar a frequência definida.
-**`registrarEnvio($email, $limite)`**: Registra a data de envio do e-mail em um arquivo de log.
+* **`obterUsuarios($apiKey, $dominio)`**: Obtém a lista de usuários do domínio usando a API do Zoho.
+* **`verificarEspaco($apiKey, $email)`**: Verifica o espaço de armazenamento disponível para um usuário específico.
+* **`enviarAlerta($apiKey, $email, $assunto, $mensagem, $nomeUsuario)`**: Envia um e-mail de alerta personalizado para o usuário.
+* **`podeEnviarEmail($email, $limite, $frequencia)`**: Verifica se já passou tempo suficiente desde o último envio de e-mail para respeitar a frequência definida.
+* **`registrarEnvio($email, $limite)`**: Registra a data de envio do e-mail em um arquivo de log.
 
 ## Logs
 
