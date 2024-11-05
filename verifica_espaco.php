@@ -65,17 +65,19 @@
         return null;
     }
     // Função para enviar e-mail de alerta
-    function enviarAlerta($apiKey, $email, $assunto, $mensagem) {
+    function enviarAlerta($apiKey, $email, $assunto, $mensagem, $nomeUsuario) {
         $url = "https://mail.zoho.com/api/accounts/$email/messages";
         $headers = [
             "Authorization: Zoho-oauthtoken $apiKey",
             "Content-Type: application/json"
         ];
+        // Substitui a variável [Nome do Usuário] pelo nome real do usuário
+        $mensagemFormatada = str_replace('[Nome do Usuário]', $nomeUsuario, $mensagem);
         $data = [
             "fromAddress" => "admin@seu_dominio.com",
             "toAddress" => [$email],
             "subject" => $assunto,
-            "content" => $mensagem
+            "content" => $mensagemFormatada
         ];
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -122,7 +124,7 @@
         if ($espacoLivreGB !== null) {
             foreach ($emailsConfig as $config) {
                 if ($espacoLivreGB <= $config['limite'] && podeEnviarEmail($usuario['email'], $config['limite'], $config['frequencia'])) {
-                    enviarAlerta($apiKey, $usuario['email'], $config['assunto'], $config['mensagem']);
+                    enviarAlerta($apiKey, $usuario['email'], $config['assunto'], $config['mensagem'], $usuario['displayName']);
                     registrarEnvio($usuario['email'], $config['limite']);
                     break; // Enviar apenas o e-mail de menor espaço relevante
                 }
