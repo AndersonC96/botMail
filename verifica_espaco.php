@@ -1,20 +1,103 @@
 <?php
-    // Inclui as configurações
+    // Inclui as configurações do arquivo config.php
     $config = include('config.php');
     $apiKey = $config['apiKey'];
     $dominio = $config['dominio'];
     $emailsConfig = $config['emails'];
-    // Funções auxiliares
+    // Função para obter a lista de usuários
     function obterUsuarios($apiKey, $dominio) {
-        // Implementação conforme a resposta anterior
+        $url = "https://mail.zoho.com/api/organization/$dominio/users";
+        $headers = [
+            "Authorization: Zoho-oauthtoken $apiKey"
+        ];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo "Erro de cURL: " . curl_error($ch) . "\n";
+            curl_close($ch);
+            return [];
+        }
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($httpCode == 200) {
+            $data = json_decode($response, true);
+            if (isset($data['data'])) {
+                return $data['data'];
+            }
+            echo "Erro ao processar resposta de usuários: $response\n";
+        } else {
+            echo "Erro ao obter usuários. Código HTTP: $httpCode. Resposta: $response\n";
+        }
+        return [];
     }
+    // Função para verificar o espaço de armazenamento de um usuário
     function verificarEspaco($apiKey, $email) {
-        // Implementação conforme a resposta anterior
+        $url = "https://mail.zoho.com/api/accounts/$email/quota";
+        $headers = [
+            "Authorization: Zoho-oauthtoken $apiKey"
+        ];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo "Erro de cURL ao verificar espaço: " . curl_error($ch) . "\n";
+            curl_close($ch);
+            return null;
+        }
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($httpCode == 200) {
+            $data = json_decode($response, true);
+            if (isset($data['data'])) {
+                $usedStorageGB = $data['data']['usedStorage'] / (1024 ** 3);
+                $totalStorageGB = $data['data']['totalStorage'] / (1024 ** 3);
+                return $totalStorageGB - $usedStorageGB;
+            }
+            echo "Erro ao processar resposta de espaço para $email: $response\n";
+        } else {
+            echo "Erro ao verificar espaço para $email. Código HTTP: $httpCode. Resposta: $response\n";
+        }
+        return null;
     }
+    // Função para enviar e-mail de alerta
     function enviarAlerta($apiKey, $email, $assunto, $mensagem) {
-        // Implementação conforme a resposta anterior
+        $url = "https://mail.zoho.com/api/accounts/$email/messages";
+        $headers = [
+            "Authorization: Zoho-oauthtoken $apiKey",
+            "Content-Type: application/json"
+        ];
+        $data = [
+            "fromAddress" => "admin@seu_dominio.com",
+            "toAddress" => [$email],
+            "subject" => $assunto,
+            "content" => $mensagem
+        ];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo "Erro de cURL ao enviar e-mail: " . curl_error($ch) . "\n";
+            curl_close($ch);
+            return;
+        }
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($httpCode == 200) {
+            echo "E-mail de alerta enviado para $email\n";
+        } else {
+            echo "Erro ao enviar e-mail para $email. Código HTTP: $httpCode. Resposta: $response\n";
+        }
     }
-    // Função para verificar a última data de envio
+    // Função para verificar a última data de envio de e-mail
     function podeEnviarEmail($email, $limite, $frequencia) {
         $arquivo = "logs/{$email}_limite_{$limite}.log";
         if (file_exists($arquivo)) {
@@ -24,9 +107,12 @@
         }
         return true;
     }
-    // Função para registrar a data de envio
+    // Função para registrar a data de envio de e-mail
     function registrarEnvio($email, $limite) {
         $arquivo = "logs/{$email}_limite_{$limite}.log";
+        if (!is_dir('logs')) {
+            mkdir('logs', 0777, true);
+        }
         file_put_contents($arquivo, date('Y-m-d H:i:s'));
     }
     // Verifica usuários e envia alertas
@@ -41,5 +127,7 @@
                     break; // Enviar apenas o e-mail de menor espaço relevante
                 }
             }
+        } else {
+            echo "Erro: Espaço livre não pôde ser determinado para " . $usuario['email'] . "\n";
         }
     }
